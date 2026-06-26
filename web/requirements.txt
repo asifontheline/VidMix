@@ -1,0 +1,1 @@
+# Requirements for static web hosting and local browser use
