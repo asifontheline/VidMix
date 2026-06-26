@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VidMix Web</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>VidMix Web</h1>
+      <div class="banner">
+        <strong>VidMix</strong> — fast browser video/audio mixing with optional server fallback.
+      </div>
+      <p>Mix video and audio locally in the browser using WebAssembly.</p>
+
+      <div class="row">
+        <label>Mode</label>
+        <select id="modeSelect">
+          <option value="browser">Browser</option>
+          <option value="server">Server</option>
+        </select>
+        <span id="serverStatus" class="path">Server mode requires `server.py`</span>
+      </div>
+      <div class="row">
+        <span id="browserSupport" class="path">Browser mode requires WebAssembly and file APIs. Best experience is in Chrome, Firefox, or Edge. Safari support is improving but may be slower and memory-limited.</span>
+      </div>
+      <div class="row">
+        <span id="previewSupport" class="path">Preview support: checking...</span>
+      </div>
+
+      <div class="dropzone" id="dropArea">
+        Drag and drop video + audio files here, or use the inputs below.
+      </div>
+
+      <div class="row">
+        <label>Video</label>
+        <input id="videoInput" type="file" accept="video/*,.mov,.mkv,.avi,.webm,.mp4,.ogv" />
+        <span id="videoName" class="path">No video selected</span>
+      </div>
+      <div class="row">
+        <label>Preview</label>
+        <video id="videoPreview" class="preview-video" controls muted playsinline></video>
+        <span class="path">If preview fails for this format, mixing still works and you can download the result.</span>
+      </div>
+
+      <div class="row">
+        <label>Audio tracks</label>
+        <button id="addAudioTrack" type="button">Add Audio Track</button>
+      </div>
+      <div class="row">
+        <span class="path">Audio inputs support MP3, AAC, WAV, FLAC, OGG, M4A, OPUS and other FFmpeg-compatible audio formats.</span>
+      </div>
+      <div id="audioMixer" class="mixer">
+        <h3>Audio Mixer</h3>
+        <div id="audioTracks"></div>
+        <div id="audioPlaceholder" class="path">Audio mixer controls appear here after you click "Add Audio Track" — then choose a file and set volume/start offset.</div>
+      </div>
+
+      <div class="row">
+        <label>Voice</label>
+        <button id="recordButton" type="button">Start Recording</button>
+        <button id="stopRecordButton" type="button" disabled>Stop Recording</button>
+        <span id="recordedStatus" class="path">No voice recorded</span>
+      </div>
+      <div class="row">
+        <label></label>
+        <button id="previewRecordedButton" type="button" disabled>Preview Recorded Voice</button>
+      </div>
+      <div class="row">
+        <label></label>
+        <button id="redoRecordingButton" type="button" disabled>Redo Recording</button>
+      </div>
+      <div class="row">
+        <label></label>
+        <label class="checkbox-label"><input id="useRecordedVoice" type="checkbox" disabled /> Include recorded voice</label>
+      </div>
+      <div class="row">
+        <label>Video audio</label>
+        <label class="checkbox-label"><input id="muteVideoAudio" type="checkbox" /> Mute original video audio</label>
+      </div>
+      <div class="row">
+        <label>Format</label>
+        <select id="outputFormat">
+          <option value="mp4">MP4</option>
+          <option value="webm">WebM</option>
+          <option value="mov">MOV</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Output</label>
+        <input id="outputName" type="text" value="mixed-output" />
+      </div>
+
+      <div class="row">
+        <label>Video Trim</label>
+        <input id="videoStart" type="number" min="0" step="0.1" placeholder="start sec" />
+        <input id="videoDuration" type="number" min="0" step="0.1" placeholder="duration sec" />
+      </div>
+
+      <div class="row">
+        <button id="loadButton">Load FFmpeg</button>
+        <button id="mixButton" disabled>Start Mix</button>
+      </div>
+
+      <div class="row">
+        <progress id="progress" max="100" value="0"></progress>
+      </div>
+
+      <div id="status"></div>
+      <div id="downloadLink"></div>
+      <a id="downloadButton" class="download-button hidden" download>Download mixed video</a>
+      <div class="footer-credit">
+        Made by <strong>Asif</strong> · <a href="https://github.com/asifontheline" target="_blank" rel="noopener">github.com/asifontheline</a>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.9/dist/ffmpeg.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

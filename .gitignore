@@ -1,0 +1,60 @@
+# Node.js dependencies
+node_modules/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pytest_cache/
+*.pyc
+
+# Virtual environments
+venv/
+.env/
+.env
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tmp
+*.temp
+
+# macOS files
+.DS_Store
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Build output
+dist/
+build/
+
+# Package manager lockfiles (keep if you want them tracked)
+# package-lock.json
+# yarn.lock
+
+# Test assets and generated files
+web/test_audio.mp3
+web/test_video.mp4
+
+# Python distributions
+*.egg-info/
+*.egg
+*.whl
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Flask instance folder
+instance/
