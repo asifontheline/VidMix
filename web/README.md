@@ -1,40 +1,34 @@
-# VidMix Web
+# VidMix Studio (web)
 
-This web version of VidMix runs in the browser using WebAssembly (`@ffmpeg/ffmpeg`).
+The browser app - a full point-and-shoot video/audio mixing editor that runs entirely client-side via `ffmpeg.wasm`. Nothing is ever uploaded anywhere.
 
 ## Run locally
 
-```bash
-cd vidmix/VidMix/web
-python3 -m http.server 8000
-```
-
-Then open `http://localhost:8000`.
-
-## Run with Python server fallback
-
-From `vidmix/VidMix`:
+From the `vidmix/VidMix` project root (not from inside `web/` - the app loads shared code from `../shared`, which needs to stay reachable from the server root):
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python server.py
+python3 server.py
 ```
 
-Then open `http://localhost:8000`.
+Then open `http://localhost:8000/web/`.
 
-Browser support:
-- Best in Chrome, Firefox, or Edge.
-- Safari is supported on recent versions, but may be slower or hit memory limits for larger files.
-- If the browser cannot run WebAssembly mixing, use `Server` mode.
+A plain static server works too, as long as it's rooted at the project root:
 
-Audio support:
-- Audio tracks support MP3, AAC, WAV, FLAC, OGG, OPUS, M4A, AIFF, ALAC, and other FFmpeg-compatible audio formats.
-- Each audio track can optionally have a volume multiplier and start offset.
-- Recorded voice is included as an additional mix track when enabled.
+```bash
+npx serve .
+```
 
-Notes:
-- Choose `Browser` mode to mix files locally in the browser using WebAssembly.
-- Choose `Server` mode to upload files to the Python backend and download the mixed result.
-- The server backend requires `ffmpeg` installed and available on the system path.
+## What it does
+
+- **Capture** - record straight from your camera (front/back on mobile), screen, or mic via `getUserMedia`/`getDisplayMedia` + `MediaRecorder`.
+- **Music library** - procedurally generated, royalty-free background beds (no external files, no licensing to track).
+- **Multi-track mixer** - waveform display, per-lane volume/fade in/out/mute/solo, drag-to-reorder, "duck under voice" auto-ducking, a draggable timeline trim ruler.
+- **Live preview** - hear an approximation of the mix (volumes, fades, ducking) before running the actual export.
+- **Export** - MP4/WebM/MOV (or MP3/WAV audio-only), resolution and quality presets, all rendered locally by `ffmpeg.wasm`.
+
+Installable as a PWA (`manifest.json` + `service-worker.js`) - "Add to Home Screen" on iOS/Android, or install from the browser's menu on desktop.
+
+## Browser support
+
+- Best in Chrome, Firefox, or Edge. Safari works but may be slower or hit memory limits on very large files.
+- Camera/mic/screen capture require a secure context (`https://`, `localhost`, or the Electron shell).

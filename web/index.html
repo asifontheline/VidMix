@@ -2,120 +2,234 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VidMix Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>VidMix Studio</title>
+    <meta name="description" content="Record, mix, and export video + audio entirely in your browser. Nothing is ever uploaded." />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="VidMix" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="container">
-      <h1>VidMix Web</h1>
-      <div class="banner">
-        <strong>VidMix</strong> — fast browser video/audio mixing with optional server fallback.
-      </div>
-      <p>Mix video and audio locally in the browser using WebAssembly.</p>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Browser studio</p>
+          <h1>VidMix Studio</h1>
+        </div>
+        <span class="muted">Everything runs on your device - nothing is ever uploaded.</span>
+      </header>
 
-      <div class="row">
-        <label>Mode</label>
-        <select id="modeSelect">
-          <option value="browser">Browser</option>
-          <option value="server">Server</option>
-        </select>
-        <span id="serverStatus" class="path">Server mode requires `server.py`</span>
-      </div>
-      <div class="row">
-        <span id="browserSupport" class="path">Browser mode requires WebAssembly and file APIs. Best experience is in Chrome, Firefox, or Edge. Safari support is improving but may be slower and memory-limited.</span>
-      </div>
-      <div class="row">
-        <span id="previewSupport" class="path">Preview support: checking...</span>
-      </div>
+      <main class="workspace">
+        <section class="workspace-main">
+          <div class="hero-panel">
+            <div>
+              <p class="eyebrow">Point, shoot, mix</p>
+              <h2>Record video, add music, and mix voice in one workspace.</h2>
+              <p>Capture straight from your camera or screen, layer in audio, and export - all client-side.</p>
+            </div>
+            <div class="hero-actions">
+              <button id="loadButton" class="secondary">Load FFmpeg</button>
+              <button id="mixButton" class="primary" disabled>Start Mix</button>
+            </div>
+          </div>
 
-      <div class="dropzone" id="dropArea">
-        Drag and drop video + audio files here, or use the inputs below.
-      </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Capture</h3>
+              <span id="captureSupport" class="muted"></span>
+            </div>
+            <div class="row compact capture-modes">
+              <button type="button" class="chip" data-capture-mode="camera">Camera</button>
+              <button type="button" class="chip" data-capture-mode="screen">Screen</button>
+              <button type="button" class="chip" data-capture-mode="mic">Mic only</button>
+              <button type="button" id="flipCameraButton" class="chip hidden">Flip camera</button>
+            </div>
+            <video id="capturePreview" class="preview-video hidden" autoplay muted playsinline></video>
+            <div class="row compact">
+              <button id="captureStartButton" type="button" disabled>Start Recording</button>
+              <button id="captureStopButton" type="button" disabled>Stop</button>
+              <span id="captureStatus" class="path">Choose a capture mode to begin.</span>
+            </div>
+          </div>
 
-      <div class="row">
-        <label>Video</label>
-        <input id="videoInput" type="file" accept="video/*,.mov,.mkv,.avi,.webm,.mp4,.ogv" />
-        <span id="videoName" class="path">No video selected</span>
-      </div>
-      <div class="row">
-        <label>Preview</label>
-        <video id="videoPreview" class="preview-video" controls muted playsinline></video>
-        <span class="path">If preview fails for this format, mixing still works and you can download the result.</span>
-      </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Source media</h3>
+              <span id="previewSupport" class="muted hidden"></span>
+            </div>
+            <div class="dropzone" id="dropArea">
+              Drag and drop video or audio files here, or use the inputs below.
+            </div>
+            <div class="row stacked">
+              <label>Video</label>
+              <input id="videoInput" type="file" accept="video/*,.mov,.mkv,.avi,.webm,.mp4,.ogv" />
+              <span id="videoName" class="path">No video selected</span>
+            </div>
+            <div class="row stacked preview-row">
+              <label>Preview</label>
+              <video id="videoPreview" class="preview-video" controls muted playsinline></video>
+              <span class="path">If preview fails for this format, mixing still works and you can download the result.</span>
+            </div>
 
-      <div class="row">
-        <label>Audio tracks</label>
-        <button id="addAudioTrack" type="button">Add Audio Track</button>
-      </div>
-      <div class="row">
-        <span class="path">Audio inputs support MP3, AAC, WAV, FLAC, OGG, M4A, OPUS and other FFmpeg-compatible audio formats.</span>
-      </div>
-      <div id="audioMixer" class="mixer">
-        <h3>Audio Mixer</h3>
-        <div id="audioTracks"></div>
-        <div id="audioPlaceholder" class="path">Audio mixer controls appear here after you click "Add Audio Track" — then choose a file and set volume/start offset.</div>
-      </div>
+            <div class="timeline-ruler" id="timelineRuler">
+              <div class="timeline-track" id="timelineTrack">
+                <div class="timeline-trim-region" id="trimRegion"></div>
+                <div class="timeline-handle start" id="trimStartHandle" title="Trim start"></div>
+                <div class="timeline-handle end" id="trimEndHandle" title="Trim end"></div>
+                <div class="timeline-playhead" id="timelinePlayhead"></div>
+              </div>
+              <div class="timeline-times">
+                <span id="trimStartLabel">0:00</span>
+                <span id="trimDurationLabel">Full length</span>
+                <span id="trimEndLabel">0:00</span>
+              </div>
+            </div>
+          </div>
 
-      <div class="row">
-        <label>Voice</label>
-        <button id="recordButton" type="button">Start Recording</button>
-        <button id="stopRecordButton" type="button" disabled>Stop Recording</button>
-        <span id="recordedStatus" class="path">No voice recorded</span>
-      </div>
-      <div class="row">
-        <label></label>
-        <button id="previewRecordedButton" type="button" disabled>Preview Recorded Voice</button>
-      </div>
-      <div class="row">
-        <label></label>
-        <button id="redoRecordingButton" type="button" disabled>Redo Recording</button>
-      </div>
-      <div class="row">
-        <label></label>
-        <label class="checkbox-label"><input id="useRecordedVoice" type="checkbox" disabled /> Include recorded voice</label>
-      </div>
-      <div class="row">
-        <label>Video audio</label>
-        <label class="checkbox-label"><input id="muteVideoAudio" type="checkbox" /> Mute original video audio</label>
-      </div>
-      <div class="row">
-        <label>Format</label>
-        <select id="outputFormat">
-          <option value="mp4">MP4</option>
-          <option value="webm">WebM</option>
-          <option value="mov">MOV</option>
-        </select>
-      </div>
-      <div class="row">
-        <label>Output</label>
-        <input id="outputName" type="text" value="mixed-output" />
-      </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Audio lanes</h3>
+              <div class="hero-actions">
+                <button id="addVoiceTrack" type="button">Add Voice Lane</button>
+                <button id="addBackgroundTrack" type="button">Add Background Lane</button>
+              </div>
+            </div>
+            <div id="audioMixer" class="mixer">
+              <div id="audioTracks"></div>
+              <div id="audioPlaceholder" class="path">Add a lane, then choose a file, generated music bed, or recorded voice for it.</div>
+            </div>
+          </div>
 
-      <div class="row">
-        <label>Video Trim</label>
-        <input id="videoStart" type="number" min="0" step="0.1" placeholder="start sec" />
-        <input id="videoDuration" type="number" min="0" step="0.1" placeholder="duration sec" />
-      </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Music library</h3>
+              <span class="muted">Procedurally generated - royalty free, no downloads</span>
+            </div>
+            <div class="row compact">
+              <label>Mood</label>
+              <select id="musicPreset"></select>
+              <label>Length</label>
+              <input id="musicDuration" type="number" min="5" step="5" value="30" />
+              <span class="small-label">sec</span>
+            </div>
+            <div class="row compact">
+              <button id="musicPreviewButton" type="button" class="secondary">Preview</button>
+              <button id="musicAddButton" type="button">Add as Background Lane</button>
+              <span id="musicStatus" class="path"></span>
+            </div>
+          </div>
 
-      <div class="row">
-        <button id="loadButton">Load FFmpeg</button>
-        <button id="mixButton" disabled>Start Mix</button>
-      </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Voice recording</h3>
+            </div>
+            <div class="row compact">
+              <button id="recordButton" type="button">Start Recording</button>
+              <button id="stopRecordButton" type="button" disabled>Stop Recording</button>
+              <button id="previewRecordedButton" type="button" disabled>Preview Voice</button>
+              <button id="redoRecordingButton" type="button" disabled>Redo</button>
+            </div>
+            <div class="row compact">
+              <span id="recordedStatus" class="path">No voice recorded</span>
+              <label class="checkbox-label"><input id="useRecordedVoice" type="checkbox" disabled /> Add recorded voice as a lane</label>
+            </div>
+            <div class="row compact">
+              <label>Video audio</label>
+              <label class="checkbox-label"><input id="muteVideoAudio" type="checkbox" /> Mute original video audio</label>
+            </div>
+          </div>
 
-      <div class="row">
-        <progress id="progress" max="100" value="0"></progress>
-      </div>
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Export</h3>
+            </div>
+            <div class="row compact">
+              <label>Format</label>
+              <select id="outputFormat"></select>
+              <label>Resolution</label>
+              <select id="resolutionSelect"></select>
+              <label>Quality</label>
+              <select id="qualitySelect">
+                <option value="fast">Fast</option>
+                <option value="balanced" selected>Balanced</option>
+                <option value="high">High quality</option>
+              </select>
+            </div>
+            <div class="row compact">
+              <label>Duck level</label>
+              <input id="duckFactor" type="range" min="0" max="100" value="35" />
+              <span class="muted">Background lanes with "Duck" checked auto-lower under voice lanes.</span>
+            </div>
+            <div class="row compact">
+              <label>Output</label>
+              <input id="outputName" type="text" value="mixed-output" />
+            </div>
+            <div class="row compact">
+              <progress id="progress" max="100" value="0"></progress>
+            </div>
+            <div id="status" class="status-box"></div>
+            <div id="downloadLink"></div>
+            <a id="downloadButton" class="download-button hidden" download>Download mixed video</a>
+          </div>
+        </section>
 
-      <div id="status"></div>
-      <div id="downloadLink"></div>
-      <a id="downloadButton" class="download-button hidden" download>Download mixed video</a>
-      <div class="footer-credit">
+        <aside class="workspace-side">
+          <div class="panel ai-panel">
+            <div class="panel-header">
+              <h3>Mix assistant</h3>
+            </div>
+            <div class="ai-actions">
+              <button type="button" class="ghost" data-ai-action="suggest">Suggest mix</button>
+              <button type="button" class="ghost" data-ai-action="caption">Create caption</button>
+              <button type="button" class="ghost" data-ai-action="name">Name export</button>
+            </div>
+            <textarea id="aiPrompt" placeholder="Ask for a mix recommendation, export name, or short caption..."></textarea>
+            <button id="aiRunButton" class="primary" type="button">Ask</button>
+            <div id="aiOutput" class="ai-output">Local heuristics only - no network calls. The assistant recommends volume/duck settings based on your lanes.</div>
+          </div>
+
+          <div class="panel live-preview-panel">
+            <div class="panel-header">
+              <h3>Live preview mix</h3>
+            </div>
+            <div class="row compact">
+              <button id="previewPlayButton" type="button" class="secondary">Play Preview Mix</button>
+              <button id="previewStopButton" type="button" class="secondary">Stop</button>
+            </div>
+            <span class="muted">Hear an approximation of volumes/fades/ducking before exporting - no ffmpeg run needed.</span>
+          </div>
+
+          <div class="panel mini-panel">
+            <div class="panel-header">
+              <h3>Quick tips</h3>
+            </div>
+            <ul class="tips-list">
+              <li>Drag the <strong>⋮⋮</strong> handle to reorder lanes.</li>
+              <li>Check <strong>Duck</strong> on a background lane to auto-lower it under voice.</li>
+              <li>Drag the trim handles on the timeline to clip the video.</li>
+              <li>On mobile, use <strong>Flip camera</strong> to switch front/back.</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="footer-credit">
         Made by <strong>Asif</strong> · <a href="https://github.com/asifontheline" target="_blank" rel="noopener">github.com/asifontheline</a>
-      </div>
+      </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.9/dist/ffmpeg.min.js"></script>
+    <script src="vendor/ffmpeg/ffmpeg.js"></script>
+    <script src="vendor/ffmpeg-util/index.js"></script>
+    <script src="../shared/mix-engine.js"></script>
+    <script src="../shared/waveform.js"></script>
+    <script src="../shared/live-preview.js"></script>
+    <script src="../shared/capture.js"></script>
+    <script src="../shared/music-generator.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

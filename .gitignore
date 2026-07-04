@@ -55,6 +55,3 @@ htmlcov/
 .coverage
 .coverage.*
 coverage.xml
-
-# Flask instance folder
-instance/

@@ -1,19 +1,22 @@
-# VidMix
+# VidMix Studio
 
-Minimal Electron-based local media mixer. This app lets you pick video and audio files on your drive, mix them together (audio over video) using your system `ffmpeg`, and save the output back to disk.
+A full point-and-shoot video and audio mixing editor that runs entirely in the browser. Record from your camera, screen, or mic, layer in audio and procedurally generated background music, mix with waveforms/fades/ducking, and export - all client-side via `ffmpeg.wasm`. **No file is ever uploaded to a server.**
 
-## Requirements
-- macOS (or platform supported by Electron)
-- Node.js and npm
-- `ffmpeg` available on PATH. Install via Homebrew:
+The web app (`web/`) is the single canonical codebase. The Electron app (`main.js`) is a thin native shell around it, for a Mac desktop build - it shares the exact same code and behavior, so there's only one app to maintain.
+
+## Run it
+
+**Website** (works on Mac/Windows/Linux/Android/iPhone, in the browser):
 
 ```bash
-brew install ffmpeg
+python3 server.py
 ```
 
-## Setup
+Then open `http://localhost:8000/web/`. See [`web/README.md`](web/README.md) for details, or `npx serve .` as an alternative static server.
 
-From the `vidmix/VidMix` folder:
+It's installable as a PWA - "Add to Home Screen" on iOS/Android puts a full-screen app icon on the device; desktop browsers offer an "Install" option too.
+
+**Mac desktop app** (Electron):
 
 ```bash
 npm install
@@ -21,33 +24,23 @@ npm start
 ```
 
 ## How it works
-- Choose a video file using the UI.
-- Add one or more audio tracks using `Add Audio Track`. For each track you can choose a file, set a start offset (seconds) and a volume multiplier.
-- Optionally set `Video Trim` start/duration to export a clip from the source video.
-- Choose an output path (or it will auto-pick a filename next to the chosen video).
-- Click `Start Mix` — progress is shown and the resulting file is written to disk.
 
-## Web-hosted version
-A browser-hosted version is available in `vidmix/VidMix/web`.
+- **Capture**: record video from your camera (front/back switch on mobile) or screen, or record mic-only audio, straight in the browser via `getUserMedia`/`getDisplayMedia` + `MediaRecorder`.
+- **Music library**: a handful of mood presets (calm, upbeat, cinematic, lo-fi) synthesized locally with Web Audio - royalty-free by construction, no downloads or attribution needed.
+- **Multi-track mixer**: one video plus unlimited audio lanes, each with a waveform, volume, start offset, fade in/out, mute/solo, and "duck under voice." Drag lanes to reorder. Drag the timeline ruler to trim the video.
+- **Live preview**: play the source video with an approximate real-time mix (Web Audio gain nodes) before spending time on an actual export.
+- **Export**: MP4/WebM/MOV or MP3/WAV (audio-only), with resolution and quality presets, rendered by `ffmpeg.wasm` - entirely on-device.
 
-### Run locally
-Open `vidmix/VidMix/web/index.html` in a browser, or serve it with a static server:
+## Project layout
 
-```bash
-cd vidmix/VidMix/web
-python3 -m http.server 8000
-```
+- `shared/` - the mixing engine, waveform/decoding, live-preview mixer, capture, and music-generator modules. Pure logic, used identically by the web app and (via the same web assets) the Electron shell.
+- `web/` - the app itself: `index.html`, `app.js`, `styles.css`, PWA manifest/service worker/icons, and `vendor/` (ffmpeg.wasm, vendored locally rather than loaded from a CDN - keeps the worker same-origin and lets the service worker cache it for offline use).
+- `main.js` - Electron shell; just opens `web/index.html` in a native window and grants camera/mic permission.
+- `server.py` - a dependency-free static file server for local testing (no upload endpoint).
+- `test/` - unit tests for the mixing engine (`node --test test/`).
 
-Then open `http://localhost:8000`.
+## Requirements
 
-### How it works
-- The web UI uses `@ffmpeg/ffmpeg` (WebAssembly) to run mixing in the browser.
-- Select a video and an audio file from your drive.
-- Optionally set output filename and video trim values.
-- Click `Load FFmpeg`, then `Start Mix`.
-- Download the mixed `.mp4` when ready.
-
-### Notes
-- All processing happens in the browser; files are never uploaded to a server.
-- This is a lightweight hosted scaffold. For production, consider adding drag-and-drop, multi-track support, and better progress/error handling.
-
+- A modern browser (Chrome, Firefox, Edge, or recent Safari) for WebAssembly and `MediaRecorder`.
+- Node.js + npm only if you want the Electron desktop build.
+- Python 3 only if you want to use `server.py` instead of another static file server.
